@@ -36,3 +36,11 @@ for numero in numeros:
     tjmg.get_inteiro_teor(numero, dir=getcwd() + "/inteiros-teores/pdfs", timeout=1)
     sleep(0.5)
 ```
+
+# dependencias
+
+a lista completa de requerimentos está no arquivo requirements.txt, mas as principais bibliotecas que você deverá ter são:
+
+SpeechRecognition
+selenium
+requests
