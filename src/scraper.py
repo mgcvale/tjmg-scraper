@@ -101,11 +101,31 @@ def get_num_processuais(busca: str, page_limit: int):
     sleep(3)
     numeros = []
     pages = 0
+    captcha = False
     while pages < page_limit:
         if pages != 0:
             # go to the next page
             driver.find_element(By.CSS_SELECTOR,
                 "td.footerlink:nth-last-child(2) > a:nth-child(1)").click()
+
+        # verify if there is a captcha
+        try:
+            driver.find_element(By.CSS_SELECTOR, 'a[href="captchaAudio.svl"]').click()
+            captcha = True
+        except:
+            pass
+
+        while captcha:
+            try:
+                audio = sr.AudioFile(getcwd() + "/temp/audio.wav")
+                text = cap.get_text_from_audio(audio)
+                driver.find_element(By.ID, "captcha_text").send_keys(text)
+                captcha = False
+            except:
+                os.remove(getcwd() + "/temp/audio.wav")
+                sleep(2)
+
+
         # get the process numbers in the current page
         sleep(1)
         processos = driver.find_elements(By.CSS_SELECTOR, '.caixa_processo')
