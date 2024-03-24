@@ -9,7 +9,7 @@ import speech_recognition as sr
 from fitz import fitz
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox import webdriver
+from selenium import webdriver
 
 def get_text_from_audio(audio_file):
     r = sr.Recognizer()
