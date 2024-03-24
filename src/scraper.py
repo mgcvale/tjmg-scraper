@@ -7,7 +7,7 @@ import mysql
 import requests
 import speech_recognition as sr
 from fitz import fitz
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox import webdriver
 
