@@ -51,7 +51,7 @@ with open("/apelacao criminal/processo.json", 'wb'):
     json.dump(tabela)
 ```
 
-Nesse exemplo, fazemos a raspagem dos números processuais de uma busca sobre Apelacao Criminal, com cerca de 4500 processos, guardamos estes processos em um arquivo, e fazemos a raspagem e o download de todas as informacoes destes processos, guardando-as tanto em um banco de dados, tanto em um arquivo do tipo "json".
+Nesse exemplo, fazemos a raspagem dos números processuais de uma busca sobre Apelacao Criminal, com cerca de 4500 processos, guardamos estes processos em um arquivo, e fazemos a raspagem e o download de todas as informacoes destes processos, guardando-as tanto em um banco de dados, quanto em um arquivo do tipo "json".
 
 # dependencias
 
