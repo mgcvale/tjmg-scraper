@@ -10,6 +10,9 @@ from fitz import fitz
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 
 def get_text_from_audio(audio_file):
     r = sr.Recognizer()
@@ -19,7 +22,10 @@ def get_text_from_audio(audio_file):
     return text
 
 
-def get_num_processuais_5000(url):
+def get_num_processuais_5000(pesquisa_livre, lista_classe, data_inicio, data_final):
+    url = "https://www5.tjmg.jus.br/jurisprudencia/pesquisaPalavrasEspelhoAcordao.do;jsessionid=AC19FB65083C3B4D5D366A5CC1D1363C.juri_node1?numeroRegistro=1&totalLinhas=1&palavras={pesquisa_livre}&pesquisarPor=ementa&orderByData=2&codigoOrgaoJulgador=&codigoCompostoRelator=&classe=&listaClasse={lista_classe}&codigoAssunto=&dataPublicacaoInicial={data_inicial}&dataPublicacaoFinal={data_final}&dataJulgamentoInicial=&dataJulgamentoFinal=&siglaLegislativa=&referenciaLegislativa=Clique+na+lupa+para+pesquisar+as+refer%EAncias+cadastradas...&numeroRefLegislativa=&anoRefLegislativa=&legislacao=&norma=&descNorma=&complemento_1=&listaPesquisa=&descricaoTextosLegais=&observacoes=&linhasPorPagina=5000&pesquisaPalavras=Pesquisar"
+    url = url.format(pesquisa_livre = pesquisa_livre, lista_classe = lista_classe, data_final = data_final, data_inicial = data_inicio)
+    print(url)
     options = Options()
     options.set_preference("browser.download.folderList", 2)
     options.set_preference("browser.download.manager.showWhenStarting", False)
@@ -45,14 +51,17 @@ def get_num_processuais_5000(url):
         except:
             break
 
-    sleep(5)
+    wait = WebDriverWait(driver, 10)
 
     # get the numbers from the page
     numeros = []
     try:
         processos = driver.find_elements(By.CSS_SELECTOR, '.caixa_processo')
+        i = 0
         for processo in processos:
+            print(i)
             numeros.append(processo.find_element(By.CSS_SELECTOR, "a > br + div").text)
+            i += 1
     except:
         print("deu errado :c")
         sleep(2)
@@ -118,7 +127,6 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
             """
         using_database = True
 
-
     for numproc in numprocs:
         numproc_clean = numproc.replace("-", "").replace(".", "").replace("/", "")
         driver.get("https://www4.tjmg.jus.br/juridico/sf/proc_complemento2.jsp?listaProcessos=" + numproc_clean)
@@ -138,7 +146,6 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
                 driver.find_element(By.XPATH, "/html/body/table[3]/tbody/tr[1]/td[2]").text[17:]
             ]
             data[4] = datetime.strptime(data[4], '%d/%m/%Y').strftime('%Y-%m-%d')
-            print(data)
             get_inteiro_teor(numproc, dir + "/temp", filename="acordao")
             # turn acordao pdf into text
 
@@ -169,7 +176,7 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
             # put the data into the table
             if returns:
                 table.append(data)
-            sleep(0.3)
+            sleep(0.2)
         except:
             continue
     driver.close()
