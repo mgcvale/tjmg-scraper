@@ -3,12 +3,13 @@ Um scraper básico para coleta de inteiros teores do Tribunal de Justica de Mina
 
 # uso do scraper
 
-Essa é uma versão "prática" do scraper, ou seja, uma versão facilitada para o uso pessoal da equipe do JurAI.
+A documentacão das funcões oferecidas pelo scraper estão no código fonte, mas aqui está uma lista geral delas:
 
-funcoes:
-get_num_processuais_5000(pesquisa_livre, lista_classe, data_inicio, data_final): faz a raspagem dos números processuais, baseado nos dados indicados. As datas devem estar no formato usado pelo TJMG: DD%2FMM%2FYYYY. 
+get_nums_processuais: faz a coleta de todos os números processuais de uma busca avancada de jurisprudencia em segunda instância no TJMG.
+get_processo_table: faz o download de diversas informacões de uma lista de números processuais. A lista das informacões a serem coletadas, em ordem, está na documentacao do código. A funcao retorna tanto um array do python com as infos, quando faz insert em um banco de dados.
+get_inteiro_teor: faz o download do inteiro teor (ou acórdão) de um processo pelo seu número processual em pdf, no diretório informado.
+normalize_tjmg_dataset: Faz a formatacão de acórdãos não formatadas, separando-as em acórdão, ementa, e súmula.
 
-get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None, cursor=None, returns=True): Faz a raspagem de todas as informacões de vários processos de uma vez baseado no modelo do banco de dados. A saída ocorre de duas maneiras: por um array do python, e pela entrada dos dados diretamente no banco de dados. Para receber o array, a flag "returns" tem que ser True; se ela for False a funcao não retorna nenhuma lista. Para fazer upload de tudo diretamente para o banco de dados, é necessário passar um objeto de conexao e um objeto de cursor do mysql para a funcao, que ela irá fazer a insercao de todos os dados no banco de dados.
 
 Exemplo:
 
@@ -18,7 +19,7 @@ import src.scraper as tjmg
 import json
 
 # pegar os números processuais de uma pesquisa sobre apelacao criminal
-numeros = tjmg.get_num_processuais_5000("Apelacao Cível", "9", "08%2F04%2F2023", "08%2F05%2F2023")
+numeros = tjmg.get_num_processuais("Apelacao Cível", "9", "08%2F04%2F2023", "08%2F05%2F2023")
 # salvar tudo em um arquivo de texto
 with open("apelacao criminal/numprocs.txt", 'w') as file:
     file.write("\n".join(numeros))
@@ -53,7 +54,7 @@ with open("/apelacao criminal/processo.json", 'wb'):
 
 Nesse exemplo, fazemos a raspagem dos números processuais de uma busca sobre Apelacao Criminal, com cerca de 4500 processos, guardamos estes processos em um arquivo, e fazemos a raspagem e o download de todas as informacoes destes processos, guardando-as tanto em um banco de dados, quanto em um arquivo do tipo "json".
 
-# dependencias
+# dependências
 
 a lista completa de requerimentos está no arquivo requirements.txt, mas as principais bibliotecas que você deverá ter são:
 
