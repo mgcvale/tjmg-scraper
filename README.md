@@ -6,8 +6,11 @@ Um scraper básico para coleta de inteiros teores do Tribunal de Justica de Mina
 A documentacão das funcões oferecidas pelo scraper estão no código fonte, mas aqui está uma lista geral delas:
 
 get_nums_processuais: faz a coleta de todos os números processuais de uma busca avancada de jurisprudencia em segunda instância no TJMG.
+
 get_processo_table: faz o download de diversas informacões de uma lista de números processuais. A lista das informacões a serem coletadas, em ordem, está na documentacao do código. A funcao retorna tanto um array do python com as infos, quando faz insert em um banco de dados.
+
 get_inteiro_teor: faz o download do inteiro teor (ou acórdão) de um processo pelo seu número processual em pdf, no diretório informado.
+
 normalize_tjmg_dataset: Faz a formatacão de acórdãos não formatadas, separando-as em acórdão, ementa, e súmula.
 
 
@@ -59,7 +62,11 @@ Nesse exemplo, fazemos a raspagem dos números processuais de uma busca sobre Ap
 a lista completa de requerimentos está no arquivo requirements.txt, mas as principais bibliotecas que você deverá ter são:
 
 mysql
+
 fitz (PyMuPDF)
+
 SpeechRecognition
+
 selenium
+
 requests
