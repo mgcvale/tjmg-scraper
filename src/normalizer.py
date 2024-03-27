@@ -5,7 +5,6 @@ import re
 
 def verify_dir(path):
     directory = os.path.dirname(path)
-
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -83,4 +82,3 @@ def normalize_tjmg_data_set(load_file: str, upload_file: str = None):
     return data
 
 
-print(normalize_tjmg_data_set('dataset/to_normalize.json', 'dataset/normalized.json'))
