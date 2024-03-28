@@ -165,6 +165,8 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
     :param connection: connection: conexão do banco de dados no qual as informacoes serão armazenadas.
     :param cursor: cursor: cursor com o banco de dados no qual as informacões serão armazenadas.
     :param returns: bool: flag indicando se a funcao deverá retornar um array com as informacoes.
+    :param lowerbound: int: quantidade mínima de caracteres que o acórdão deve ter.
+    :param upperbound: int: quantidade máxima de caracteres que o acórdão deve ter.
     :return: string array
     """
     if returns:
