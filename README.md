@@ -42,7 +42,7 @@ cursor = connection.cursor()
 
 # pegar a tabela de dados raspada pelo scraper. Vamos salvar tanto no banco de dados, passando a conexao e o cursor, 
 # tanto em um array do python, setando o returns como True.
-tabela = tjmg.get_processo_table(numprocs=entries, connection=connection, cursor=cursor, returns=True)
+tabela = tjmg.get_processo_table(numprocs=entries, connection=connection, cursor=cursor, returns=True, lowerbound=0, upperbound=100000)
 
 # fechar conexão com o banco de dados
 if 'cursor' in locals():
@@ -51,8 +51,9 @@ if 'connection' in locals() and connection.is_connected():
     connection.close()
 
 # transformar a tabela que pegamos em um arquivo json
-with open("/apelacao criminal/processo.json", 'wb'):
-    json.dump(tabela)
+with open("/apelacao criminal/processo.json", 'w') as file:
+    json_text = json.dumps(tabela)
+    file.write(json_text)
 ```
 
 Nesse exemplo, fazemos a raspagem dos números processuais de uma busca sobre Apelacao Criminal, com cerca de 4500 processos, guardamos estes processos em um arquivo, e fazemos a raspagem e o download de todas as informacoes destes processos, guardando-as tanto em um banco de dados, quanto em um arquivo do tipo "json".
