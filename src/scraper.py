@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from os import getcwd
 from time import sleep
-
+import re
 import mysql
 import requests
 import speech_recognition as sr
@@ -53,24 +53,34 @@ def get_nums_processuais(pesquisa_livre, lista_classe, data_inicio, data_final):
     options.set_preference("browser.download.dir", getcwd() + "/temp")
     driver = webdriver.Firefox(options = options)
     driver.get(url)
+    wait = WebDriverWait(driver, 6)
+    captcha_file = getcwd() + "/temp"
 
-    # quebrar o captcha
+    # quebrar um eventual captcha
     while True:
-        driver.find_element(By.CSS_SELECTOR, 'a[href="captchaAudio.svl"]').click()
+        # verificar se existe captcha
         try:
-            driver.find_element(By.ID, "captcha_text").send_keys("")
-            audio = sr.AudioFile(getcwd() + "/temp/audio.wav")
-            text = get_text_from_audio(audio)
-            driver.find_element(By.ID, "captcha_text").send_keys(text)
+            wait.until(EC.presence_of_element_located((By.ID, "captcha_text")))
         except:
-            sleep(2)
-            continue
-        sleep(2)
-        os.remove(getcwd() + "/temp/audio.wav")
-        try:
-            driver.find_element(By.ID, "captcha_text").send_keys("")
-        except:
+            # em caso negativo, deletar o arquivo de audio do captcha, se existir
+            try:
+                os.remove(captcha_file)
+            except:
+                pass
             break
+        try:
+            # fazer a limpeza se o arquivo de audio existir (o que significa que é a segunda ou mais tentativa)
+            if os.path.isfile(captcha_file):
+                os.remove(captcha_file)
+                driver.find_element(By.ID, "captcha_text").clear()
+                driver.find_element(By.ID, 'gerar').click()
+            driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/table/tbody/tr[4]/td/a[2]').click()
+            sleep(1)
+            text = get_text_from_audio(sr.AudioFile(captcha_file))
+            driver.find_element(By.ID, "captcha_text").send_keys(text)
+            sleep(1)
+        except:
+            continue
 
     # esperar um tempo até a página dos processos ter carregado completamente
     wait = WebDriverWait(driver, 10)
@@ -143,7 +153,7 @@ def get_inteiro_teor(numproc: str, dir = getcwd() + "/inteiros-teores", timeout=
     open(dir, "wb").write(r.content)
 
 
-def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None, cursor=None, returns = True):
+def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None, cursor=None, returns = True, lowerbound: int = 700*5.5, upperbound: int = 4000*5.5):
     """
     Faz a raspagem dos dados de uma lista de processos, retornando uma tabela (em forma de array OU em um banco de
     dados) com o número processual, câmara, classe, assunto, data de cadastro, limiar, juiz, comarca,
@@ -157,7 +167,6 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
     :param returns: bool: flag indicando se a funcao deverá retornar um array com as informacoes.
     :return: string array
     """
-
     if returns:
         table = []
     #init webdriver
@@ -165,9 +174,12 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
     options.set_preference("browser.download.folderList", 2)
     options.set_preference("browser.download.manager.showWhenStarting", False)
     options.set_preference("browser.download.dir", getcwd() + "/temp")
+    options.set_preference("permissions.default.stylesheet", 2)
     driver = webdriver.Firefox(options=options)
+    wait = WebDriverWait(driver, 6)
 
     # checar se o banco de dados será utilizado, e, em caso positivo, fazer o seu setup.
+    using_database = False
     if(connection is not None):
         insert_query = """
             INSERT INTO processo (numero_tjmg, camara, classe, assunto, data_cadastro, liminar, juiz, comarca, documento_origem, assistencia_judiciaria, atuacao_juiz, acordao, ementa, sumula)
@@ -176,8 +188,36 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
         using_database = True
 
     for numproc in numprocs:
+        sleep(0.2)
         numproc_clean = numproc.replace("-", "").replace(".", "").replace("/", "")
         driver.get("https://www4.tjmg.jus.br/juridico/sf/proc_complemento2.jsp?listaProcessos=" + numproc_clean)
+        captcha_file = getcwd() + "/temp/audio.wav"
+
+        # quebrar um eventual captcha
+        while True:
+            # verificar se existe captcha
+            try:
+                wait.until(EC.presence_of_element_located((By.ID, "captcha_text")))
+            except:
+                # em caso negativo, deletar o arquivo de audio do captcha, se existir
+                try:
+                    os.remove(captcha_file)
+                except:
+                    pass
+                break
+            try:
+                # fazer a limpeza se o arquivo de audio existir (o que significa que é a segunda ou mais tentativa)
+                if os.path.isfile(captcha_file):
+                    os.remove(captcha_file)
+                    driver.find_element(By.ID, "captcha_text").clear()
+                    driver.find_element(By.ID, 'gerar').click()
+                driver.find_element(By.XPATH, '/html/body/table/tbody/tr[3]/td/table/tbody/tr[4]/td/a[2]').click()
+                sleep(1)
+                text = get_text_from_audio(sr.AudioFile(captcha_file))
+                driver.find_element(By.ID, "captcha_text").send_keys(text)
+                sleep(1)
+            except:
+                continue
         try:
             # raspar a maioria dos dados
             data = [
@@ -205,15 +245,32 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
                 acordao_txt += page.get_text()
 
             # pegar a ementa e súmula do acórdão
-            ementa = acordao_txt[acordao_txt.find("EMENTA: ") + len("EMENTA: "):]
-            ementa = ementa[:ementa.find("\n")]
-            sumula = acordao_txt[acordao_txt.find("SÚMULA: ") + len("SÚMULA: "):]
-            sumula = sumula[:sumula.rfind("\"")]
+            pattern_list = [r'^.*?EMENTA:', r'(?<=\n)\d+(?=\n)', r'Tribunal de Justiça de Minas Gerais\n']
+
+            data_pdf = re.sub('|'.join(pattern_list), '', acordao_txt, flags=re.DOTALL)
+
+            ementa = re.sub(r'(.*?)A\s+C\s+Ó\s+R\s+D\s+Ã\s+O.*', r'\1', data_pdf, flags=re.DOTALL)
+            split = ementa.split('\n\n')
+            ementa = ' '.join(split[:-1]) if len(split) != 1 else ementa.join(split)
+
+            acordao = re.sub(r'.*?V\sO\sT\sO\s+(.*?)SÚMULA.*', r'\1', data_pdf, flags=re.DOTALL)
+            acordao = re.sub(r'\s+', ' ', acordao)
+
+            sumula = re.sub(r'.*?SÚMULA:+(.*?)', r'\1', data_pdf, flags=re.DOTALL)
+            sumula = re.sub(r'\s+', ' ', sumula)
 
             # concatenar o resto das informacões
-            data.append(acordao_txt)
+            data.append(acordao)
             data.append(ementa)
             data.append(sumula)
+
+            # checar se a ementa não passou do limite de caracteres
+            print(len(acordao))
+            print(lowerbound)
+            print(upperbound)
+            if len(acordao) < lowerbound or len(acordao) > upperbound:
+                print("nao passou :c")
+                continue
 
             # fazer a insercao dos dados no banco de dados, se possível
             if using_database:
@@ -225,8 +282,10 @@ def get_processo_table(numprocs, dir = getcwd() + "/processos", connection=None,
 
             # colocar as informacoes na tabela, se possível
             if returns:
+                print("concatenando à tabela")
                 table.append(data)
-        except:
+        except Exception as e:
+            print(e)
             continue
     # fehar o driver e retornar, se possível
     driver.close()
